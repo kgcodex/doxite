@@ -23,6 +23,59 @@ class TextNode:
             and self.url == other.url
         )
 
+    def split(self) -> list[TextNode]:
+        if self.text_type != TextType.TEXT.value:
+            return [self]
+
+        nodes: list[TextNode] = []
+
+        text = self.text
+        text_len = len(text)
+
+        delimiter_map = {
+            "`": TextType.CODE,
+            "*": TextType.BOLD,
+            "_": TextType.ITALIC,
+        }
+
+        inside_code_block = False
+
+        curr_ptr = 0
+        look_ahead_ptr = 0
+        offset_ptr = 0
+
+        while look_ahead_ptr < text_len:
+            char = text[look_ahead_ptr]
+
+            if char in delimiter_map:
+                delimiter = delimiter_map[char]
+
+                if char == "`":
+                    inside_code_block = True
+
+                if look_ahead_ptr != curr_ptr and char == text[curr_ptr]:
+                    if buff := text[offset_ptr:curr_ptr]:
+                        nodes.append(TextNode(buff, TextType.TEXT))
+
+                    nodes.append(
+                        TextNode(text[curr_ptr + 1 : look_ahead_ptr], delimiter)
+                    )
+                    if char == "`":
+                        inside_code_block = False
+
+                    curr_ptr = look_ahead_ptr + 1
+                    offset_ptr = curr_ptr
+                else:
+                    if not (inside_code_block and text[curr_ptr] == "`"):
+                        curr_ptr = look_ahead_ptr
+
+            look_ahead_ptr += 1
+
+        if buff := text[offset_ptr:look_ahead_ptr]:
+            nodes.append(TextNode(buff, TextType.TEXT))
+
+        return nodes
+
     def to_leaf_node(self) -> LeafNode:
         match self.text_type:
             case TextType.TEXT.value:
