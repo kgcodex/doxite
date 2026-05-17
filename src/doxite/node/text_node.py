@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from doxite.node.leaf_node import LeafNode
 from doxite.node.text_type import TextType
 
@@ -22,6 +24,76 @@ class TextNode:
             and self.text_type == other.text_type
             and self.url == other.url
         )
+
+    def split_link_and_image(self) -> list[TextNode]:
+        if self.text_type != TextType.TEXT.value:
+            return [self]
+
+        nodes: list[TextNode] = []
+
+        text = self.text
+        text_len = len(text)
+
+        url = ""
+        node_txt = ""
+        node_type: Literal[TextType.IMAGE, TextType.LINK, None] = None
+
+        curr_ptr = 0
+        look_ahead_ptr = 0
+        offset_ptr = 0
+
+        while look_ahead_ptr < text_len:
+            char = text[look_ahead_ptr]
+
+            if char == "[" and node_type != TextType.IMAGE:
+                node_type = TextType.LINK
+                curr_ptr = look_ahead_ptr
+
+            if (
+                char == "!"
+                and look_ahead_ptr + 1 < text_len
+                and text[look_ahead_ptr + 1] == "["
+            ):
+                node_type = TextType.IMAGE
+                curr_ptr = look_ahead_ptr
+
+            if (
+                char == "]"
+                and look_ahead_ptr + 1 < text_len
+                and text[look_ahead_ptr + 1] == "("
+            ):
+                if buff := text[offset_ptr:curr_ptr]:
+                    nodes.append(TextNode(buff, TextType.TEXT))
+
+                if node_type == TextType.LINK:
+                    node_txt = text[curr_ptr + 1 : look_ahead_ptr]
+
+                if node_type == TextType.IMAGE:
+                    node_txt = text[curr_ptr + 2 : look_ahead_ptr]
+
+                curr_ptr = look_ahead_ptr + 2
+
+                while (
+                    look_ahead_ptr < text_len
+                    and text[look_ahead_ptr] != ")"
+                    and text[look_ahead_ptr] != " "
+                ):
+                    look_ahead_ptr += 1
+
+                url = text[curr_ptr:look_ahead_ptr]
+
+                if node_txt and node_type:
+                    nodes.append(TextNode(node_txt, node_type, url))
+                    node_type = None
+
+                offset_ptr = look_ahead_ptr + 1
+
+            look_ahead_ptr += 1
+
+        if buff := text[offset_ptr:look_ahead_ptr]:
+            nodes.append(TextNode(buff, TextType.TEXT))
+
+        return nodes
 
     def split(self) -> list[TextNode]:
         if self.text_type != TextType.TEXT.value:
@@ -55,7 +127,9 @@ class TextNode:
 
                 if look_ahead_ptr != curr_ptr and char == text[curr_ptr]:
                     if buff := text[offset_ptr:curr_ptr]:
-                        nodes.append(TextNode(buff, TextType.TEXT))
+                        nodes.extend(
+                            TextNode(buff, TextType.TEXT).split_link_and_image()
+                        )
 
                     nodes.append(
                         TextNode(text[curr_ptr + 1 : look_ahead_ptr], delimiter)
@@ -72,7 +146,7 @@ class TextNode:
             look_ahead_ptr += 1
 
         if buff := text[offset_ptr:look_ahead_ptr]:
-            nodes.append(TextNode(buff, TextType.TEXT))
+            nodes.extend(TextNode(buff, TextType.TEXT).split_link_and_image())
 
         return nodes
 

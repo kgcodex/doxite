@@ -282,3 +282,329 @@ def test_split_nested_like_input() -> None:
     assert node3.split() == [
         TextNode("code _inside_ *inside*", TextType.CODE),
     ]
+
+
+def test_link_split() -> None:
+    node1 = TextNode("text [link text](www.linktext.com) text", TextType.TEXT)
+    node2 = TextNode("[link text](www.linktext.com) text", TextType.TEXT)
+    node3 = TextNode("text [link text](www.linktext.com)", TextType.TEXT)
+
+    assert node1.split() == [
+        TextNode("text ", TextType.TEXT),
+        TextNode("link text", TextType.LINK, "www.linktext.com"),
+        TextNode(" text", TextType.TEXT),
+    ]
+
+    assert node2.split() == [
+        TextNode("link text", TextType.LINK, "www.linktext.com"),
+        TextNode(" text", TextType.TEXT),
+    ]
+
+    assert node3.split() == [
+        TextNode("text ", TextType.TEXT),
+        TextNode("link text", TextType.LINK, "www.linktext.com"),
+    ]
+
+
+def test_image_split() -> None:
+    node1 = TextNode("text ![img text](img.png) text", TextType.TEXT)
+    node2 = TextNode("![img text](img.png) text", TextType.TEXT)
+    node3 = TextNode("text ![img text](img.png)", TextType.TEXT)
+
+    assert node1.split() == [
+        TextNode("text ", TextType.TEXT),
+        TextNode("img text", TextType.IMAGE, "img.png"),
+        TextNode(" text", TextType.TEXT),
+    ]
+
+    assert node2.split() == [
+        TextNode("img text", TextType.IMAGE, "img.png"),
+        TextNode(" text", TextType.TEXT),
+    ]
+
+    assert node3.split() == [
+        TextNode("text ", TextType.TEXT),
+        TextNode("img text", TextType.IMAGE, "img.png"),
+    ]
+
+
+def test_link_and_image_split() -> None:
+    node1 = TextNode(
+        "![img text](img.png) text [link text](www.linktext.com) text ![img text](img.png)",
+        TextType.TEXT,
+    )
+    node2 = TextNode(
+        "[link text](www.linktext.com) text ![img text](img.png) text [link text](www.linktext.com)",
+        TextType.TEXT,
+    )
+
+    assert node1.split() == [
+        TextNode("img text", TextType.IMAGE, "img.png"),
+        TextNode(" text ", TextType.TEXT),
+        TextNode("link text", TextType.LINK, "www.linktext.com"),
+        TextNode(" text ", TextType.TEXT),
+        TextNode("img text", TextType.IMAGE, "img.png"),
+    ]
+
+    assert node2.split() == [
+        TextNode("link text", TextType.LINK, "www.linktext.com"),
+        TextNode(" text ", TextType.TEXT),
+        TextNode("img text", TextType.IMAGE, "img.png"),
+        TextNode(" text ", TextType.TEXT),
+        TextNode("link text", TextType.LINK, "www.linktext.com"),
+    ]
+
+
+def test_split_link_and_image_with_inline_formatting() -> None:
+    node = TextNode(
+        "text *bold* [link](url) `code` ![img](img.png) _italic_",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("text ", TextType.TEXT),
+        TextNode("bold", TextType.BOLD),
+        TextNode(" ", TextType.TEXT),
+        TextNode("link", TextType.LINK, "url"),
+        TextNode(" ", TextType.TEXT),
+        TextNode("code", TextType.CODE),
+        TextNode(" ", TextType.TEXT),
+        TextNode("img", TextType.IMAGE, "img.png"),
+        TextNode(" ", TextType.TEXT),
+        TextNode("italic", TextType.ITALIC),
+    ]
+
+
+def test_split_multiple_links_and_images() -> None:
+    node = TextNode(
+        "[a](1)[b](2)![c](3)![d](4)",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("a", TextType.LINK, "1"),
+        TextNode("b", TextType.LINK, "2"),
+        TextNode("c", TextType.IMAGE, "3"),
+        TextNode("d", TextType.IMAGE, "4"),
+    ]
+
+
+def test_split_links_and_images_inside_code_are_ignored() -> None:
+    node = TextNode(
+        "`[link](url)` and `![img](img.png)`",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("[link](url)", TextType.CODE),
+        TextNode(" and ", TextType.TEXT),
+        TextNode("![img](img.png)", TextType.CODE),
+    ]
+
+
+def test_split_unclosed_link_and_image() -> None:
+    node1 = TextNode(
+        "text [link text](url text ![image text](img.png text",
+        TextType.TEXT,
+    )
+
+    node2 = TextNode(
+        "[link](www.linktext.com",
+        TextType.TEXT,
+    )
+
+    assert node1.split() == [
+        TextNode("text ", TextType.TEXT),
+        TextNode("link text", TextType.LINK, "url"),
+        TextNode("text ", TextType.TEXT),
+        TextNode("image text", TextType.IMAGE, "img.png"),
+        TextNode("text", TextType.TEXT),
+    ]
+
+    assert node2.split() == [TextNode("link", TextType.LINK, "www.linktext.com")]
+
+
+def test_split_empty_link_and_image_text() -> None:
+    node = TextNode(
+        "[]() and ![]()",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode(" and ", TextType.TEXT),
+    ]
+
+
+def test_split_nested_like_links() -> None:
+    node = TextNode(
+        "[outer [inner]](url)",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("[outer ", TextType.TEXT),
+        TextNode("inner]", TextType.LINK, "url"),
+    ]
+
+
+def test_split_broken_paren_structure() -> None:
+    node = TextNode(
+        "[link]url)",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("[link]url)", TextType.TEXT),
+    ]
+
+
+def test_split_image_then_text_without_spacing() -> None:
+    node = TextNode(
+        "![img](img.png)text",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("img", TextType.IMAGE, "img.png"),
+        TextNode("text", TextType.TEXT),
+    ]
+
+
+def test_split_text_then_link_without_spacing() -> None:
+    node = TextNode(
+        "text[link](url)",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("text", TextType.TEXT),
+        TextNode("link", TextType.LINK, "url"),
+    ]
+
+
+def test_split_adjacent_inline_and_links() -> None:
+    node = TextNode(
+        "*bold*[link](url)_italic_",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("bold", TextType.BOLD),
+        TextNode("link", TextType.LINK, "url"),
+        TextNode("italic", TextType.ITALIC),
+    ]
+
+
+def test_split_malformed_mixed_inline_regions() -> None:
+    node = TextNode(
+        "*bold [link](url) text",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("*bold ", TextType.TEXT),
+        TextNode("link", TextType.LINK, "url"),
+        TextNode(" text", TextType.TEXT),
+    ]
+
+
+def test_split_preserves_token_order() -> None:
+    node = TextNode(
+        "a [b](1) c *d* e `f` g ![h](2)",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("a ", TextType.TEXT),
+        TextNode("b", TextType.LINK, "1"),
+        TextNode(" c ", TextType.TEXT),
+        TextNode("d", TextType.BOLD),
+        TextNode(" e ", TextType.TEXT),
+        TextNode("f", TextType.CODE),
+        TextNode(" g ", TextType.TEXT),
+        TextNode("h", TextType.IMAGE, "2"),
+    ]
+
+
+def test_split_lone_image_marker() -> None:
+    node = TextNode(
+        "hello ! world",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("hello ! world", TextType.TEXT),
+    ]
+
+
+def test_split_broken_image_syntax() -> None:
+    node = TextNode(
+        "![broken",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("![broken", TextType.TEXT),
+    ]
+
+
+def test_split_url_with_nested_parens() -> None:
+    node = TextNode(
+        "[link](https://site.com/a(b)c)",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("link", TextType.LINK, "https://site.com/a(b"),
+        TextNode("c)", TextType.TEXT),
+    ]
+
+
+def test_split_adjacent_malformed_tokens() -> None:
+    node = TextNode(
+        "[a](1)![](`code`",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("a", TextType.LINK, "1"),
+        TextNode("code", TextType.CODE),
+    ]
+
+
+def test_split_link_adjacent_to_inline() -> None:
+    node = TextNode(
+        "[link](url)*bold*",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("link", TextType.LINK, "url"),
+        TextNode("bold", TextType.BOLD),
+    ]
+
+
+def test_split_is_stable() -> None:
+    node = TextNode(
+        "text *bold* [link](url)",
+        TextType.TEXT,
+    )
+
+    split_nodes = node.split()
+
+    for split_node in split_nodes:
+        assert split_node.split() == [split_node]
+
+
+def test_split_large_malformed_input() -> None:
+    node = TextNode(
+        "*bold [link](url `code ![img](src)",
+        TextType.TEXT,
+    )
+
+    assert node.split() == [
+        TextNode("*bold ", TextType.TEXT),
+        TextNode("link", TextType.LINK, "url"),
+        TextNode("`code ", TextType.TEXT),
+        TextNode("img", TextType.IMAGE, "src"),
+    ]
