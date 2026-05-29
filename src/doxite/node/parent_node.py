@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from doxite.node import HTMLNode
+from doxite.node.html_node import HTMLNode
 
 
 class ParentNode(HTMLNode):
@@ -16,7 +16,7 @@ class ParentNode(HTMLNode):
         if not self.tag:
             raise ValueError("ParentNode requires a tag")
 
-        if not self.children:
-            raise ValueError("ParentNode requires at least one child")
+        if self.children is None:
+            raise ValueError("ParentNode's Children can't be None")
 
         return f"<{self.tag}{self.props_to_html()}>{''.join(child.to_html() for child in self.children)}</{self.tag}>"

@@ -40,11 +40,11 @@ def test_parent_node_without_children() -> None:
         node.to_html()
 
 
-def test_parent_node_with_empty_children() -> None:
-    node = ParentNode("p", [])
+# def test_parent_node_with_empty_children() -> None:
+#     node = ParentNode("p", [])
 
-    with pytest.raises(ValueError):
-        node.to_html()
+#     with pytest.raises(ValueError):
+#         node.to_html()
 
 
 def test_parent_node_with_only_leaf_node() -> None:

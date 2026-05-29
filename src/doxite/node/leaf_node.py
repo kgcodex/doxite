@@ -1,5 +1,14 @@
 from doxite.node.html_node import HTMLNode
 
+VOID_TAGS = {
+    "img",
+    "br",
+    "hr",
+    "meta",
+    "link",
+    "input",
+}
+
 
 class LeafNode(HTMLNode):
     def __init__(
@@ -13,6 +22,9 @@ class LeafNode(HTMLNode):
     def to_html(self) -> str:
         if self.value is None:
             raise ValueError("LeafNode must have a value.")
+
+        if self.tag in VOID_TAGS:
+            return f"<{self.tag}{self.props_to_html()} />"
 
         if self.tag:
             return f"<{self.tag}{self.props_to_html()}>{self.value}</{self.tag}>"

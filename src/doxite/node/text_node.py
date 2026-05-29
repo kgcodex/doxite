@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from typing import Literal
 
+from doxite.node.html_node import HTMLNode
 from doxite.node.leaf_node import LeafNode
 from doxite.node.text_type import TextType
 
 
-class TextNode:
+class TextNode(HTMLNode):
     def __init__(self, text: str, text_type: TextType, url: str | None = None):
         self.text = text
         self.text_type = text_type.value
@@ -150,25 +151,27 @@ class TextNode:
 
         return nodes
 
-    def to_leaf_node(self) -> LeafNode:
+    def to_leaf_node(self, props: dict[str, str | None] | None = None) -> LeafNode:
         match self.text_type:
             case TextType.TEXT.value:
-                return LeafNode(None, self.text)
+                return LeafNode(None, self.text, props)
 
             case TextType.BOLD.value:
-                return LeafNode("b", self.text)
+                return LeafNode("b", self.text, props)
 
             case TextType.ITALIC.value:
-                return LeafNode("i", self.text)
+                return LeafNode("i", self.text, props)
 
             case TextType.CODE.value:
-                return LeafNode("code", self.text)
+                return LeafNode("code", self.text, props)
 
             case TextType.LINK.value:
-                return LeafNode("a", self.text, {"href": self.url})
+                return LeafNode("a", self.text, {"href": self.url, **(props or {})})
 
             case TextType.IMAGE.value:
-                return LeafNode("img", "", {"src": self.url, "alt": self.text})
+                return LeafNode(
+                    "img", "", {"src": self.url, "alt": self.text, **(props or {})}
+                )
 
             case _:
                 raise NotImplementedError
