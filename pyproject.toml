@@ -4,11 +4,35 @@ version = "0.1.0"
 description = "A Minimal Static Site Generator"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "typer>=0.26.3",
+]
+
+
+# PyPI
+authors = [
+    { name = "Kunal Goel", email = "hexcodex101@gmail.com" }
+]
+maintainers = [
+    { name = "Kunal Goel", email = "hexcodex101@gmail.com" }
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+[project.urls]
+Homepage = "https://github.com/kgcodex/doxite"
+Documentation = "https://github.com/kgcodex/doxite#readme"
+Repository = "https://github.com/kgcodex/doxite"
+Issues = "https://github.com/kgcodex/doxite/issues"
 
 
 [project.scripts]
-doxite = "doxite.main:main"
+doxite = "doxite.main:app"
 
 
 [dependency-groups]

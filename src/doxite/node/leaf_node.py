@@ -4,9 +4,6 @@ VOID_TAGS = {
     "img",
     "br",
     "hr",
-    "meta",
-    "link",
-    "input",
 }
 
 
