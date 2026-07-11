@@ -26,6 +26,9 @@ jobs:
       - name: Install Doxite
         run: pip install doxite
 
+      - name: Pre-build Setup
+        run: mkdir -p .doxite
+
       - name: Build Site
         run: doxite build
 

@@ -33,9 +33,7 @@ def init(project_name: str) -> None:
     (project_dir / "src" / "index.md").write_text(
         "# Welcome to Doxite", encoding="utf-8"
     )
-    (project_dir / ".doxite" / ".gitignore").write_text(
-        "*\n!.gitignore\n", encoding="utf-8"
-    )
+    (project_dir / ".doxite" / ".gitignore").write_text("*", encoding="utf-8")
 
     console.print(
         f"[cyan]Initialized Doxite project at: [italic]{project_dir}[/italic][/cyan]"
